@@ -17,7 +17,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Helper functions (moved inline for simplicity)
+// Helper functions
 async function getAudioDurationFromUrlNode(url) {
   try {
     const response = await fetch(url);
@@ -38,7 +38,6 @@ async function getDurationsForUrlsNode(urls) {
 app.post('/render-video', async (req, res) => {
   try {
     const { ayahs, config } = req.body;
-    // (Add your validation here)
 
     // 1. Bundle Remotion
     const entry = path.resolve(__dirname, 'remotion', 'index.ts');
@@ -46,11 +45,15 @@ app.post('/render-video', async (req, res) => {
       outDir: path.resolve(__dirname, 'dist'),
     });
 
-    // 2. Select composition
-    const compositions = await getCompositions(bundled, { 
-      inputProps: { ayahs, config },
-      // Add browser configuration for containerized environments
+    // 2. Configure browser options for Browserless or external browser service
+    const browserOptions = {
+      // Option 1: Use Browserless cloud service
+      browserExecutable: process.env.BROWSERLESS_URL ? undefined : '/usr/bin/google-chrome',
       chromiumOptions: {
+        // If using Browserless, connect to the WebSocket endpoint
+        ...(process.env.BROWSERLESS_URL && {
+          wsEndpoint: `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`
+        }),
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -64,24 +67,21 @@ app.post('/render-video', async (req, res) => {
           '--disable-renderer-backgrounding',
           '--disable-web-security',
           '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection',
           '--disable-extensions',
           '--disable-default-apps',
-          '--disable-background-networking',
-          '--disable-background-mode',
-          '--disable-client-side-phishing-detection',
-          '--disable-component-update',
-          '--disable-domain-reliability',
-          '--disable-hang-monitor',
-          '--disable-prompt-on-repost',
-          '--disable-sync',
-          '--metrics-recording-only',
-          '--safebrowsing-disable-auto-update',
-          '--disable-background-networking',
           '--use-gl=swiftshader',
-          '--disable-software-rasterizer'
+          '--disable-software-rasterizer',
+          // Add memory optimization flags
+          '--memory-pressure-off',
+          '--max_old_space_size=4096'
         ]
       }
+    };
+
+    // 3. Get compositions
+    const compositions = await getCompositions(bundled, { 
+      inputProps: { ayahs, config },
+      ...browserOptions
     });
     
     const compId = { 
@@ -93,10 +93,10 @@ app.post('/render-video', async (req, res) => {
     const composition = compositions.find((c) => c.id === compId);
     if (!composition) return res.status(400).json({ error: 'Invalid template' });
 
-    // 3. Audio durations
+    // 4. Audio durations
     const audioDurations = await getDurationsForUrlsNode(config.audioUrl || []);
 
-    // 4. Render to temp file
+    // 5. Render to temp file
     const tmpOut = path.join(os.tmpdir(), `video-${Date.now()}.mp4`);
     await renderMedia({
       serveUrl: bundled,
@@ -105,45 +105,12 @@ app.post('/render-video', async (req, res) => {
       outputLocation: tmpOut,
       inputProps: { ayahs, config, audioDurations },
       overwrite: true,
-      // Add the same browser configuration for rendering
-      chromiumOptions: {
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--disable-web-security',
-          '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection',
-          '--disable-extensions',
-          '--disable-default-apps',
-          '--disable-background-networking',
-          '--disable-background-mode',
-          '--disable-client-side-phishing-detection',
-          '--disable-component-update',
-          '--disable-domain-reliability',
-          '--disable-hang-monitor',
-          '--disable-prompt-on-repost',
-          '--disable-sync',
-          '--metrics-recording-only',
-          '--safebrowsing-disable-auto-update',
-          '--disable-background-networking',
-          '--use-gl=swiftshader',
-          '--disable-software-rasterizer'
-        ]
-      },
-      // Additional rendering options for containerized environments
-      concurrency: 1, // Reduce concurrency in limited memory environments
-      verbose: true // Enable verbose logging for debugging
+      concurrency: 1,
+      verbose: true,
+      ...browserOptions
     });
 
-    // 5. Stream MP4
+    // 6. Stream MP4
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Disposition', 'attachment; filename="video.mp4"');
     fs.createReadStream(tmpOut)
