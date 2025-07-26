@@ -1,4 +1,3 @@
-// index.js
 import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
@@ -9,6 +8,7 @@ import { bundle } from '@remotion/bundler';
 import { renderMedia, getCompositions } from '@remotion/renderer';
 import { parseStream } from 'music-metadata';
 import fetch from 'node-fetch';
+
 
 
 // Define __dirname in ESM
