@@ -1,23 +1,23 @@
 [phases.setup]
 nixPkgs = [
-  "glib"
-  "gobject-introspection"
-  "gtk3"
-  "x11"
-  "libxcomposite"
-  "libxdamage"
-  "libxrandr"
-  "nss"
-  "atk"
-  "cups"
-  "dbus"
-  "libxfixes"
-  "libxrender"
-  "libxtst"
-  "alsa-lib"
-  "mesa"
-  "pango"
-  "gdk-pixbuf"
-  "libdrm"
+  "glib",
+  "gobject-introspection",
+  "gtk3",
+  "x11",
+  "libxcomposite",
+  "libxdamage",
+  "libxrandr",
+  "nss",
+  "atk",
+  "cups",
+  "dbus",
+  "libxfixes",
+  "libxrender",
+  "libxtst",
+  "alsa-lib",
+  "mesa",
+  "pango",
+  "gdk-pixbuf",
+  "libdrm",
   "expat"
 ]
