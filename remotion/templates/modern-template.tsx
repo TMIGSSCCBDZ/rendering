@@ -5,6 +5,7 @@ export interface TemplateProps {
   ayahs: Array<{
     number: number
     text: string
+    
     translation?: string
     numberInSurah: number
     surah: {

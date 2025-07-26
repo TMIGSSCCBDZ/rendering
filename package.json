@@ -1,8 +1,7 @@
-
 {
   "scripts": {
-  "start": "node index.mjs"
-},
+    "start": "node index.mjs"
+  },
   "dependencies": {
     "@remotion/bundler": "^4.0.327",
     "@remotion/renderer": "^4.0.327",
@@ -11,8 +10,8 @@
     "music-metadata": "^11.7.3",
     "node-fetch": "^3.3.2"
   },
-
   "devDependencies": {
+    "@types/react": "^19.1.8",
     "fs": "^0.0.1-security",
     "os": "^0.1.2",
     "path": "^0.12.7",

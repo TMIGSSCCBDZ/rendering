@@ -2,12 +2,14 @@ import { Composition } from 'remotion';
 import { ClassicTemplate } from './templates/classic-template';
 import { ModernTemplate } from './templates/modern-template';
 import { CapcutTemplate } from './templates/capcut-template';
+import React from 'react';
 
 // **NEW: Helper function to calculate duration**
 export const calculateVideoDuration = (ayahs:[], config :any = {}, audioDurations = []) => {
 const titleDuration = config.titleDuration || 2;
 const closingDuration = config.closingDuration || 1;
 const fps = config.fps || 30;
+
 const totalAyahSeconds = audioDurations.length === ayahs.length
   ? audioDurations.reduce((sum, dur) => sum + (dur || 8), 0)
   : ayahs.length * (config.ayahDuration || 8);

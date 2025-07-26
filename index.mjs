@@ -10,6 +10,7 @@ import { renderMedia, getCompositions } from '@remotion/renderer';
 import { parseStream } from 'music-metadata';
 import fetch from 'node-fetch';
 
+
 // Define __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
