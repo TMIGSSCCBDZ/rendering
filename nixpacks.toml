@@ -1,19 +1,24 @@
-
+# nixpacks.toml
 [phases.setup]
-nixpkgs = [
+nixPkgs = [
   "glib",
+  "gobject-introspection",
   "gtk3",
-  "nss",
-  "atk",
-  "pango",
-  "cairo",
+  "libx11",
   "libxcomposite",
   "libxdamage",
   "libxrandr",
-  "libxss",
-  "libxcb",
-  "libx11",
-  "libxext",
+  "nss",
+  "atk",
+  "cups",
+  "dbus",
+  "libxfixes",
+  "libxrender",
+  "libxtst",
+  "alsa-lib",
   "mesa",
-  "dbus"
+  "pango",
+  "gdk-pixbuf",
+  "libdrm",
+  "expat"
 ]
