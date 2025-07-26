@@ -9,9 +9,21 @@ import { renderMedia, getCompositions } from '@remotion/renderer';
 import { parseStream } from 'music-metadata';
 import fetch from 'node-fetch';
 
+// Set environment variables directly in code for Railway Browserless
+// Replace these with your actual Railway Browserless deployment
+process.env.BROWSERLESS_URL = 'wss://browserless-production-ca10.up.railway.app/playwright?token=SA5wjfftRbFYcS2yL9tYkqIeCifg8TTwXtCfJfSwhfYXUYZR'; // Replace with your actual Railway Browserless URL
+process.env.BROWSERLESS_TOKEN = 'SA5wjfftRbFYcS2yL9tYkqIeCifg8TTwXtCfJfSwhfYXUYZR'; // Replace with the token from your Browserless Railway app
+
+// Alternative: You can also set these in Railway's environment variables instead of hardcoding
+
 // Define __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Debug environment variables
+console.log('Environment check:');
+console.log('BROWSERLESS_URL:', process.env.BROWSERLESS_URL);
+console.log('BROWSERLESS_TOKEN:', process.env.BROWSERLESS_TOKEN ? 'SET' : 'NOT SET');
 
 const app = express();
 app.use(cors());
@@ -45,52 +57,84 @@ app.post('/render-video', async (req, res) => {
       outDir: path.resolve(__dirname, 'dist'),
     });
 
-    // 2. Configure browser options
-    const browserOptions = {};
+    // 2. Configure browser options with multiple fallback strategies
+    let browserOptions = {};
     
-    // If using Browserless cloud service
-    if (process.env.BROWSERLESS_URL && process.env.BROWSERLESS_TOKEN) {
-      console.log('Using Browserless cloud service');
-      browserOptions.chromiumOptions = {
-        wsEndpoint: `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`
+    // Strategy 1: Try Browserless if credentials are available
+    if (process.env.BROWSERLESS_URL && process.env.BROWSERLESS_TOKEN && process.env.BROWSERLESS_TOKEN !== 'your_browserless_token_here') {
+      console.log('🌐 Using Browserless cloud service');
+      browserOptions = {
+        chromiumOptions: {
+          wsEndpoint: `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`
+        }
       };
-    } else {
-      // Fallback to local Chrome with all necessary flags
-      console.log('Using local Chrome with optimized flags');
-      browserOptions.chromiumOptions = {
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--disable-web-security',
-          '--disable-features=TranslateUI,VizDisplayCompositor',
-          '--disable-extensions',
-          '--disable-default-apps',
-          '--use-gl=swiftshader',
-          '--disable-software-rasterizer',
-          '--disable-background-networking',
-          '--disable-background-mode',
-          '--disable-client-side-phishing-detection',
-          '--disable-component-update',
-          '--disable-domain-reliability',
-          '--disable-hang-monitor',
-          '--disable-prompt-on-repost',
-          '--disable-sync',
-          '--metrics-recording-only',
-          '--safebrowsing-disable-auto-update',
-          '--memory-pressure-off',
-          '--max_old_space_size=4096',
-          '--disable-ipc-flooding-protection'
-        ]
+    } 
+    // Strategy 2: Force disable local Chrome and use Puppeteer's bundled Chromium
+    else {
+      console.log('🔧 Attempting to use alternative browser strategy');
+      
+      // Set Puppeteer environment variables to use bundled Chromium
+      process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'false';
+      process.env.PUPPETEER_EXECUTABLE_PATH = '';
+      
+      browserOptions = {
+        // Try to force Remotion to use a different browser approach
+        browserExecutable: null, // Let Puppeteer find its own browser
+        chromiumOptions: {
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-web-security',
+            '--disable-features=TranslateUI,VizDisplayCompositor',
+            '--disable-extensions',
+            '--disable-default-apps',
+            '--use-gl=swiftshader',
+            '--disable-software-rasterizer',
+            '--disable-background-networking',
+            '--disable-background-mode',
+            '--disable-client-side-phishing-detection',
+            '--disable-component-update',
+            '--disable-domain-reliability',
+            '--disable-hang-monitor',
+            '--disable-prompt-on-repost',
+            '--disable-sync',
+            '--metrics-recording-only',
+            '--safebrowsing-disable-auto-update',
+            '--memory-pressure-off',
+            '--max_old_space_size=4096',
+            '--disable-ipc-flooding-protection',
+            // Additional flags for Railway/nixOS
+            '--disable-logging',
+            '--disable-login-animations',
+            '--disable-motion-blur',
+            '--disable-3d-apis',
+            '--disable-threaded-animation',
+            '--disable-threaded-scrolling',
+            '--disable-in-process-stack-traces',
+            '--disable-histogram-customizer',
+            '--disable-gl-extensions',
+            '--disable-composited-antialiasing',
+            '--disable-canvas-aa',
+            '--disable-3d-apis',
+            '--disable-accelerated-2d-canvas',
+            '--disable-accelerated-jpeg-decoding',
+            '--disable-accelerated-mjpeg-decode',
+            '--disable-app-list-dismiss-on-blur',
+            '--disable-accelerated-video-decode'
+          ]
+        }
       };
     }
+
+    console.log('Browser options configured:', JSON.stringify(browserOptions, null, 2));
 
     // 3. Get compositions
     const compositions = await getCompositions(bundled, { 
