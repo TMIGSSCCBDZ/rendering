@@ -11,7 +11,7 @@ import fetch from 'node-fetch';
 
 // Set environment variables directly in code for Railway Browserless
 // Replace these with your actual Railway Browserless deployment
-process.env.BROWSERLESS_URL = 'wss://browserless-production-ca10.up.railway.app/playwright'; // Replace with your actual Railway Browserless URL
+process.env.BROWSERLESS_URL = 'wss://browserless-production-ca10.up.railway.app'; // Replace with your actual Railway Browserless URL
 process.env.BROWSERLESS_TOKEN = 'SA5wjfftRbFYcS2yL9tYkqIeCifg8TTwXtCfJfSwhfYXUYZR'; // Replace with the token from your Browserless Railway app
 
 // Alternative: You can also set these in Railway's environment variables instead of hardcoding
@@ -48,6 +48,7 @@ async function getDurationsForUrlsNode(urls) {
 }
 
 app.post('/render-video', async (req, res) => {
+  let browser = null;
   try {
     const { ayahs, config } = req.body;
 
@@ -57,89 +58,24 @@ app.post('/render-video', async (req, res) => {
       outDir: path.resolve(__dirname, 'dist'),
     });
 
-    // 2. Configure browser options with multiple fallback strategies
-    let browserOptions = {};
+    // 2. Connect to Browserless
+    const browserWSEndpoint = `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`;
+    console.log('🌐 Connecting to Browserless:', process.env.BROWSERLESS_URL);
     
-    // Strategy 1: Try Browserless if credentials are available
-    if (process.env.BROWSERLESS_URL && process.env.BROWSERLESS_TOKEN && process.env.BROWSERLESS_TOKEN !== 'your_browserless_token_here') {
-      console.log('🌐 Using Browserless cloud service');
-      browserOptions = {
-        chromiumOptions: {
-          wsEndpoint: `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`
-        }
-      };
-    } 
-    // Strategy 2: Force disable local Chrome and use Puppeteer's bundled Chromium
-    else {
-      console.log('🔧 Attempting to use alternative browser strategy');
-      
-      // Set Puppeteer environment variables to use bundled Chromium
-      process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = 'false';
-      process.env.PUPPETEER_EXECUTABLE_PATH = '';
-      
-      browserOptions = {
-        // Try to force Remotion to use a different browser approach
-        browserExecutable: null, // Let Puppeteer find its own browser
-        chromiumOptions: {
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-web-security',
-            '--disable-features=TranslateUI,VizDisplayCompositor',
-            '--disable-extensions',
-            '--disable-default-apps',
-            '--use-gl=swiftshader',
-            '--disable-software-rasterizer',
-            '--disable-background-networking',
-            '--disable-background-mode',
-            '--disable-client-side-phishing-detection',
-            '--disable-component-update',
-            '--disable-domain-reliability',
-            '--disable-hang-monitor',
-            '--disable-prompt-on-repost',
-            '--disable-sync',
-            '--metrics-recording-only',
-            '--safebrowsing-disable-auto-update',
-            '--memory-pressure-off',
-            '--max_old_space_size=4096',
-            '--disable-ipc-flooding-protection',
-            // Additional flags for Railway/nixOS
-            '--disable-logging',
-            '--disable-login-animations',
-            '--disable-motion-blur',
-            '--disable-3d-apis',
-            '--disable-threaded-animation',
-            '--disable-threaded-scrolling',
-            '--disable-in-process-stack-traces',
-            '--disable-histogram-customizer',
-            '--disable-gl-extensions',
-            '--disable-composited-antialiasing',
-            '--disable-canvas-aa',
-            '--disable-3d-apis',
-            '--disable-accelerated-2d-canvas',
-            '--disable-accelerated-jpeg-decoding',
-            '--disable-accelerated-mjpeg-decode',
-            '--disable-app-list-dismiss-on-blur',
-            '--disable-accelerated-video-decode'
-          ]
-        }
-      };
+    try {
+      browser = await puppeteer.connect({
+        browserWSEndpoint: browserWSEndpoint
+      });
+      console.log('✅ Successfully connected to Browserless');
+    } catch (connectError) {
+      console.error('❌ Failed to connect to Browserless:', connectError);
+      throw new Error(`Failed to connect to Browserless: ${connectError.message}`);
     }
 
-    console.log('Browser options configured:', JSON.stringify(browserOptions, null, 2));
-
-    // 3. Get compositions
+    // 3. Get compositions using the connected browser
     const compositions = await getCompositions(bundled, { 
       inputProps: { ayahs, config },
-      ...browserOptions
+      puppeteerInstance: browser
     });
     
     const compId = { 
@@ -165,17 +101,31 @@ app.post('/render-video', async (req, res) => {
       overwrite: true,
       concurrency: 1,
       verbose: true,
-      ...browserOptions
+      puppeteerInstance: browser
     });
 
     // 6. Stream MP4
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Disposition', 'attachment; filename="video.mp4"');
     fs.createReadStream(tmpOut)
-      .on('end', () => fs.unlinkSync(tmpOut))
+      .on('end', () => {
+        fs.unlinkSync(tmpOut);
+        // Clean up browser connection
+        if (browser) {
+          browser.disconnect();
+        }
+      })
       .pipe(res);
   } catch (err) {
     console.error('Render error:', err);
+    // Clean up browser connection on error
+    if (browser) {
+      try {
+        browser.disconnect();
+      } catch (disconnectError) {
+        console.error('Error disconnecting browser:', disconnectError);
+      }
+    }
     res.status(500).json({ error: 'Render failed', details: err.message || err });
   }
 });
