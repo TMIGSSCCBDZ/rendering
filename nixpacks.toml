@@ -1,9 +1,17 @@
 [phases.setup]
 nixPkgs = [
   "nodejs",
+  # Core GLib and GObject libraries
   "glib",
   "gobject-introspection",
+  "glibc",
+  # GTK and UI libraries
   "gtk3",
+  "atk",
+  "pango",
+  "gdk-pixbuf",
+  "cairo",
+  # X11 libraries
   "xorg.libX11",
   "xorg.libXcomposite",
   "xorg.libXdamage",
@@ -11,20 +19,29 @@ nixPkgs = [
   "xorg.libXfixes",
   "xorg.libXrender",
   "xorg.libXtst",
-  "atk",
-  "cups",
-  "dbus",
-  "alsa-lib",
-  "mesa",
-  "pango",
-  "gdk-pixbuf",
-  "libdrm",
-  "expat",
-  "nss",
-  "freetype",
-  "fontconfig",
+  "xorg.libXext",
+  "xorg.libXi",
   "xorg.libxcb",
   "xorg.libxshmfence",
-  "xorg.libXext",
-  "xorg.libXi"
+  "xorg.libXScrnSaver",
+  # Audio and graphics
+  "alsa-lib",
+  "mesa",
+  "libdrm",
+  "cups",
+  # System libraries
+  "dbus",
+  "expat",
+  "nss",
+  "nspr",
+  "freetype",
+  "fontconfig",
+  # Additional libraries often needed for Chrome
+  "libxkbcommon",
+  "at-spi2-atk",
+  "at-spi2-core",
+  "libuuid",
+  "libappindicator-gtk3",
+  # Chromium-specific dependencies
+  "chromium"
 ]
