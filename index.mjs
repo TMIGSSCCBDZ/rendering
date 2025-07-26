@@ -45,15 +45,19 @@ app.post('/render-video', async (req, res) => {
       outDir: path.resolve(__dirname, 'dist'),
     });
 
-    // 2. Configure browser options for Browserless or external browser service
-    const browserOptions = {
-      // Option 1: Use Browserless cloud service
-      browserExecutable: process.env.BROWSERLESS_URL ? undefined : '/usr/bin/google-chrome',
-      chromiumOptions: {
-        // If using Browserless, connect to the WebSocket endpoint
-        ...(process.env.BROWSERLESS_URL && {
-          wsEndpoint: `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`
-        }),
+    // 2. Configure browser options
+    const browserOptions = {};
+    
+    // If using Browserless cloud service
+    if (process.env.BROWSERLESS_URL && process.env.BROWSERLESS_TOKEN) {
+      console.log('Using Browserless cloud service');
+      browserOptions.chromiumOptions = {
+        wsEndpoint: `${process.env.BROWSERLESS_URL}?token=${process.env.BROWSERLESS_TOKEN}`
+      };
+    } else {
+      // Fallback to local Chrome with all necessary flags
+      console.log('Using local Chrome with optimized flags');
+      browserOptions.chromiumOptions = {
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -66,17 +70,27 @@ app.post('/render-video', async (req, res) => {
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
           '--disable-web-security',
-          '--disable-features=TranslateUI',
+          '--disable-features=TranslateUI,VizDisplayCompositor',
           '--disable-extensions',
           '--disable-default-apps',
           '--use-gl=swiftshader',
           '--disable-software-rasterizer',
-          // Add memory optimization flags
+          '--disable-background-networking',
+          '--disable-background-mode',
+          '--disable-client-side-phishing-detection',
+          '--disable-component-update',
+          '--disable-domain-reliability',
+          '--disable-hang-monitor',
+          '--disable-prompt-on-repost',
+          '--disable-sync',
+          '--metrics-recording-only',
+          '--safebrowsing-disable-auto-update',
           '--memory-pressure-off',
-          '--max_old_space_size=4096'
+          '--max_old_space_size=4096',
+          '--disable-ipc-flooding-protection'
         ]
-      }
-    };
+      };
+    }
 
     // 3. Get compositions
     const compositions = await getCompositions(bundled, { 

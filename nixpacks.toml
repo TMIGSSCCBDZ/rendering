@@ -1,67 +1,9 @@
+
 [phases.setup]
 nixPkgs = [
   "nodejs",
-  
-  # Essential system libraries
+  # Only basic dependencies since we're using external browser
   "glibc",
-  "gcc-unwrapped.lib",
-  
-  # Core GLib ecosystem (this should provide libgobject-2.0.so.0)
-  "glib",
-  "glib.dev",
-  "gobject-introspection",
-  "gobject-introspection.dev",
-  
-  # GTK and UI libraries with dev packages
-  "gtk3",
-  "gtk3.dev",
-  "atk",
-  "pango",
-  "gdk-pixbuf",
-  "cairo",
-  "cairo.dev",
-  
-  # X11 libraries
-  "xorg.libX11",
-  "xorg.libXcomposite",
-  "xorg.libXdamage",
-  "xorg.libXrandr",
-  "xorg.libXfixes",
-  "xorg.libXrender",
-  "xorg.libXtst",
-  "xorg.libXext",
-  "xorg.libXi",
-  "xorg.libxcb",
-  "xorg.libxshmfence",
-  "xorg.libXScrnSaver",
-  "xorg.libXcursor",
-  
-  # Audio and graphics
-  "alsa-lib",
-  "mesa",
-  "libdrm",
-  "cups",
-  
-  # System libraries
-  "dbus",
-  "dbus.lib",
-  "expat",
-  "nss",
-  "nspr",
-  "freetype",
-  "fontconfig",
-  
-  # Additional libraries often needed for Chrome
-  "libxkbcommon",
-  "at-spi2-atk",
-  "at-spi2-core",
-  "libuuid",
-  "libappindicator-gtk3",
-  
-  # Package config (might help with library linking)
-  "pkg-config",
-  
-  # Try both chromium and google-chrome
-  "chromium",
-  "google-chrome"
+  "ffmpeg",
+  "pkg-config"
 ]
