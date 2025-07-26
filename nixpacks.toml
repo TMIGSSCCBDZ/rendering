@@ -35,7 +35,6 @@ nixPkgs = [
   "xorg.libxshmfence",
   "xorg.libXScrnSaver",
   "xorg.libXcursor",
-  "xorg.libXss",
   
   # Audio and graphics
   "alsa-lib",
