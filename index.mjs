@@ -11,7 +11,7 @@ import fetch from 'node-fetch';
 
 // Set environment variables directly in code for Railway Browserless
 // Replace these with your actual Railway Browserless deployment
-process.env.BROWSERLESS_URL = 'wss://browserless-production-ca10.up.railway.app/playwright?token=SA5wjfftRbFYcS2yL9tYkqIeCifg8TTwXtCfJfSwhfYXUYZR'; // Replace with your actual Railway Browserless URL
+process.env.BROWSERLESS_URL = 'wss://browserless-production-ca10.up.railway.app/playwright'; // Replace with your actual Railway Browserless URL
 process.env.BROWSERLESS_TOKEN = 'SA5wjfftRbFYcS2yL9tYkqIeCifg8TTwXtCfJfSwhfYXUYZR'; // Replace with the token from your Browserless Railway app
 
 // Alternative: You can also set these in Railway's environment variables instead of hardcoding
