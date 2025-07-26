@@ -9,8 +9,6 @@ import { renderMedia, getCompositions } from '@remotion/renderer';
 import { parseStream } from 'music-metadata';
 import fetch from 'node-fetch';
 
-
-
 // Define __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,10 +46,50 @@ app.post('/render-video', async (req, res) => {
       outDir: path.resolve(__dirname, 'dist'),
     });
 
-
     // 2. Select composition
-    const compositions = await getCompositions(bundled, { inputProps: { ayahs, config } });
-    const compId = { classic: 'ClassicTemplate', modern: 'ModernTemplate', capcut: 'CapcutTemplate' }[config.template];
+    const compositions = await getCompositions(bundled, { 
+      inputProps: { ayahs, config },
+      // Add browser configuration for containerized environments
+      chromiumOptions: {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-web-security',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-extensions',
+          '--disable-default-apps',
+          '--disable-background-networking',
+          '--disable-background-mode',
+          '--disable-client-side-phishing-detection',
+          '--disable-component-update',
+          '--disable-domain-reliability',
+          '--disable-hang-monitor',
+          '--disable-prompt-on-repost',
+          '--disable-sync',
+          '--metrics-recording-only',
+          '--safebrowsing-disable-auto-update',
+          '--disable-background-networking',
+          '--use-gl=swiftshader',
+          '--disable-software-rasterizer'
+        ]
+      }
+    });
+    
+    const compId = { 
+      classic: 'ClassicTemplate', 
+      modern: 'ModernTemplate', 
+      capcut: 'CapcutTemplate' 
+    }[config.template];
+    
     const composition = compositions.find((c) => c.id === compId);
     if (!composition) return res.status(400).json({ error: 'Invalid template' });
 
@@ -67,6 +105,42 @@ app.post('/render-video', async (req, res) => {
       outputLocation: tmpOut,
       inputProps: { ayahs, config, audioDurations },
       overwrite: true,
+      // Add the same browser configuration for rendering
+      chromiumOptions: {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-web-security',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-extensions',
+          '--disable-default-apps',
+          '--disable-background-networking',
+          '--disable-background-mode',
+          '--disable-client-side-phishing-detection',
+          '--disable-component-update',
+          '--disable-domain-reliability',
+          '--disable-hang-monitor',
+          '--disable-prompt-on-repost',
+          '--disable-sync',
+          '--metrics-recording-only',
+          '--safebrowsing-disable-auto-update',
+          '--disable-background-networking',
+          '--use-gl=swiftshader',
+          '--disable-software-rasterizer'
+        ]
+      },
+      // Additional rendering options for containerized environments
+      concurrency: 1, // Reduce concurrency in limited memory environments
+      verbose: true // Enable verbose logging for debugging
     });
 
     // 5. Stream MP4
