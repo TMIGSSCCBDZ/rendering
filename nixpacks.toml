@@ -1,0 +1,19 @@
+
+[phases.setup]
+nixpkgs = [
+  "glib",
+  "gtk3",
+  "nss",
+  "atk",
+  "pango",
+  "cairo",
+  "libxcomposite",
+  "libxdamage",
+  "libxrandr",
+  "libxss",
+  "libxcb",
+  "libx11",
+  "libxext",
+  "mesa",
+  "dbus"
+]
